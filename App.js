@@ -1,13 +1,40 @@
+import { StackActions } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import {NavigationContainer} from '@react-navigation/native';
+import { createNativeStackNavigator} from '@react-navigation/native-stack';
 
-export default function App() {
+import About from './pages/about';
+import Home from './pages/home';
+const Stack = createNativeStackNavigator()
+
+const App = ()=> {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <SafeAreaProvider>
+    <NavigationContainer>
+      <Stack.Navigator>
+
+        <Stack.Screen // ABOUT
+        name = "About"
+        component = {About}
+        options = {
+          {headerShown:false}
+        }
+        />
+
+        <Stack.Screen
+        name = "Home"
+        component = {Home}
+        options = {
+          {headerShown:false}
+        }
+
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+    </SafeAreaProvider>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -18,3 +45,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+export default App;
