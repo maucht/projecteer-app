@@ -4,23 +4,30 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Logo from "../components/logo";
 import NavigationButton from "../components/navigationButton";
 import * as Font from 'expo-font'
+import LogoWithText from "../components/logoWithText";
+import firebase from "../firebase";
 
 
 var vw = Dimensions.get('window').width
 var vh = Dimensions.get('window').height
 
+// FIREBASE TUTORIAL: https://www.youtube.com/watch?v=ql4J6SpLXZA 12:40
 
-
-class About extends React.Component{
+class About extends React.Component{ // Create "Login with Google" and "Sign up with Google"
     state = {
+            screenMode:0,
             fontsLoaded:false,
-            userText:'',
+            showPassword:false,
+            emailFormInput:'',
+            passFormInput:'',
     }
     async loadFonts(){
         await Font.loadAsync({
             'Nunito' : require('../assets/fonts/Nunito.ttf'),
             'Playfair' : require('../assets/fonts/Playfair.ttf'),
-            'Playfair-italic' : require('../assets/fonts/Playfair-italic.ttf')
+            'Playfair-italic' : require('../assets/fonts/Playfair-italic.ttf'),
+            'Nunito-Medium' : require('../assets/fonts/Nunito-Medium.ttf'),
+            'Nunito-Bold' : require('../assets/fonts/Nunito-Bold.ttf')
         })
         console.log("FONTS LOADED")
         this.setState({fontsLoaded:true})
@@ -28,28 +35,31 @@ class About extends React.Component{
     componentDidMount(){
         this.loadFonts();
     }
-    handleCreateAccount(){
-        return(null)
+    handleSignUp(){
+        firebase.auth().createUserWithEmailAndPassword(this.state.emailFormInput,this.state.passInput)
+        .then(userCredentials => {
+            const user = userCredentials.user
+            console.log(user)
+        })
+        .catch(err =>{
+            alert(err)
+        })
     }
     handleLogin(){
         console.log("TODO: implement log in")
         return(null)
     }
-    handleUserChange(text){
-        console.log(text.key)
+    handleEmailChange = () =>{
+        console.log(this.state.emailFormInput)
 
     }
-    signUpButton(){ // REPLACE THIS LATER
-        return(
-            <TouchableOpacity style={styles.signUpButton} onPress = {()=>this.handleCreateAccount()}>
-                <Text style={styles.signUpText}>Create Account</Text>
-            </TouchableOpacity>
-        )
+    handlePassChange = () =>{
+        console.log(this.state.passFormInput)
     }
-    loginButton(){ // SHOULD SERVE AS A SUBMIT BUTTON FOR LOGIN INFO INSTEAD
+    signInButton(buttonStyle, textStyle, textContent, clickResponse){ // REPLACE THIS LATER
         return(
-            <TouchableOpacity style={styles.loginButton} onPress = {()=>this.handleLogin()}>
-                <Text style={styles.loginText}>Login</Text>
+            <TouchableOpacity style={buttonStyle} onPress = {clickResponse}>
+                <Text style={textStyle}>{textContent}</Text>
             </TouchableOpacity>
         )
     }
@@ -57,40 +67,35 @@ class About extends React.Component{
         return(
             <View removeClippedSubviews={true} style = {styles.loginFields}>
                 <TextInput 
-                placeholder="Username"
+                placeholder="Email"
                 keyboardType="alphanumeric"
                 placeholderTextColor = 'grey'
-                onChange = {(text) => this.handleUserChange(text)}
+                
+                onChangeText = {(text)=>this.setState({emailFormInput:text})}
+                onChange = {()=>this.handleEmailChange()}
+                value = {this.state.emailFormInput}
                 style = {styles.userInput}></TextInput>
                 <TextInput 
                 placeholder="Password"
                 placeholderTextColor = 'grey'
-                secureTextEntry={true} 
+                secureTextEntry={this.state.showPassword ? false : true} 
+                onChangeText = {(text)=>this.setState({passFormInput:text})}
+                onChange = {()=>this.handlePassChange()}
+                value = {this.state.passFormInput}
                 style = {styles.passInput}></TextInput>
             </View>
         )
     }
     render(){
-    if(this.state.fontsLoaded){
-        return(
-            <SafeAreaView style={styles.parentView}>
-                <View><Logo/></View>
-                <View style = {styles.headerTextView}>
-                    <Text style = {styles.headerText}>Projecteer</Text>
-                    <Text style = {styles.headerSlogan}>Unity in Productivity</Text>
-                </View>
+    switch(this.state.screenMode){
+        case(0):
+        if(this.state.fontsLoaded){
+            return(
+                <SafeAreaView style={styles.parentView}>
+                <LogoWithText/>
 
-                <View>{this.loginFields()}</View>
-                <View>
-                    <NavigationButton 
-                    button = {styles.debugButton} 
-                    buttonText = {styles.debugText} 
-                    content = {'Home'}
-                    nav = 'Home'
-                    />
-                </View>
-                
-                <View>{this.loginButton()}</View>
+                <View>{this.signInButton(styles.signUpButtonMode0, styles.signUpText, "Create an Account", ()=>this.setState({screenMode:2}))}</View>
+                <View>{this.signInButton(styles.loginButtonMode0, styles.loginText, "Sign In", ()=>this.setState({screenMode:1}))}</View>
 
             </SafeAreaView>
         )
@@ -100,6 +105,60 @@ class About extends React.Component{
                 <View></View>
             )
         }
+        case(1):
+            if(this.state.fontsLoaded){
+                return(
+                    <SafeAreaView style={styles.parentView}>
+                        <LogoWithText/>
+
+                        <View>{this.loginFields()}</View>
+                        <View>
+                            <NavigationButton 
+                            button = {styles.debugButton} 
+                            buttonText = {styles.debugText} 
+                            content = {'Home'}
+                            nav = 'Home'
+                            />
+                        </View>
+                        
+                        <View>{this.signInButton(styles.loginButtonMode1, styles.loginText, "Sign In", ()=>console.log("lol"))}</View>
+
+                    </SafeAreaView>
+                )
+                }
+                else{
+                    return(
+                        <View></View>
+                    )
+                }
+                break
+            case(2):
+                    if(this.state.fontsLoaded){
+                        return(
+                            <SafeAreaView style={styles.parentView}>
+                                <LogoWithText/>
+        
+                                <View>{this.loginFields()}</View>
+                                <View>
+                                    <NavigationButton 
+                                    button = {styles.debugButton} 
+                                    buttonText = {styles.debugText} 
+                                    content = {'Home'}
+                                    nav = 'Home'
+                                    />
+                                </View>
+                                
+                                <View>{this.signInButton(styles.signUpButtonMode2, styles.signUpText, "Register", ()=>this.handleSignUp())}</View>
+        
+                            </SafeAreaView>
+                        )
+                        }
+                        else{
+                            return(
+                                <View></View>
+                            )
+                        }
+    }
 }}
 
 const styles = StyleSheet.create({
@@ -134,57 +193,85 @@ const styles = StyleSheet.create({
         top:vh/3.8,
     },
     userInput:{
-        fontFamily:"Nunito",
-        padding:vh/38,
-        borderRadius:10,
+        fontFamily:"Nunito-Medium",
+        padding:vh/90,
+        borderRadius:5,
         backgroundColor:'white',
         borderColor:'black',
         borderWidth:2,
         top:vh/14,
-        fontSize:20,
-        fontWeight:'bold',
+        fontSize:18,
 
     },
     passInput:{
-        padding:vh/38,
-        borderRadius:10,
+        padding:vh/90,
+        borderRadius:5,
         backgroundColor:'white',
         borderColor:'black',
-        fontFamily:'Nunito',
-        fontWeight:'bold',
+        fontFamily:'Nunito-Medium',
         borderWidth:2,
-        top:vh/10,
-        fontSize:20,
+        top:vh/11,
+        fontSize:18,
     },
-    signUpButton:{
+    signUpButtonMode2:{
+        width:vw/1.4,
+        height:vh/13,
+        top:vh/9.8,
+        justifyContent:'center',
+        backgroundColor:'rgb(255, 255, 255)',
+        borderRadius:12,
+
+    },
+    signUpButtonMode1:{
         width:vw/1.4,
         height:vh/13,
         top:vh/3.8,
         justifyContent:'center',
-        backgroundColor:'rgb(38, 132, 255)',
-        borderRadius:36,
+        backgroundColor:'rgb(255, 255, 255)',
+        borderRadius:12,
+
+    },
+    signUpButtonMode0:{
+        width:vw/1.4,
+        height:vh/13,
+        top:vh/2.2,
+        justifyContent:'center',
+        backgroundColor:'rgb(255, 255, 255)',
+
+        borderRadius:12,
 
     },
     signUpText:{
-        color:"white",
+        fontFamily:'Nunito-Bold',
+        color:"rgba(23,47,101,1)",
         height:'100%',
-        fontSize:vh/45,
+        fontSize:vh/43,
         textAlign:'center',
         lineHeight:vh/13,
     },  
-    loginButton:{
+    loginButtonMode0:{
         width:vw/1.4,
         height:vh/13,
-        top:vh/4.5,
+        top:vh/2,
         justifyContent:'center',
-        backgroundColor:'rgb(38, 132, 255)',
+        backgroundColor:'rgb(255, 255, 255)',
+        borderRadius:12,
+
+    },
+    loginButtonMode1:{
+        width:vw/1.4,
+        height:vh/13,
+        top:vh/9.8,
+        justifyContent:'center',
+        backgroundColor:'rgb(255, 255, 255)',
         borderRadius:36,
 
     },
     loginText:{
-        color:"white",
+        fontFamily:'Nunito-Bold',
+        color:"rgba(23,47,101,1)",
         height:'100%',
-        fontSize:vh/45,
+        fontSize:vh/43,
         textAlign:'center',
         lineHeight:vh/13,
     }, 
