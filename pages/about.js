@@ -1,17 +1,24 @@
 import React from "react"
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Image, TouchableWithoutFeedback, TextInput } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Image, TouchableOpacity, TouchableWithoutFeedback, TextInput } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Logo from "../components/logo";
+import BackButton from "../components/backButton";
 import NavigationButton from "../components/navigationButton";
 import * as Font from 'expo-font'
 import LogoWithText from "../components/logoWithText";
-import firebase from "../firebase";
+import { auth } from "../firebase";
+import { faThList } from "@fortawesome/free-solid-svg-icons";
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+
+
 
 
 var vw = Dimensions.get('window').width
 var vh = Dimensions.get('window').height
 
 // FIREBASE TUTORIAL: https://www.youtube.com/watch?v=ql4J6SpLXZA 12:40
+
+
 
 class About extends React.Component{ // Create "Login with Google" and "Sign up with Google"
     state = {
@@ -20,6 +27,10 @@ class About extends React.Component{ // Create "Login with Google" and "Sign up 
             showPassword:false,
             emailFormInput:'',
             passFormInput:'',
+            keyTrigger:0,
+    }
+    AuthToHome = () => {
+        this.props.navigation.navigate('Home')
     }
     async loadFonts(){
         await Font.loadAsync({
@@ -34,20 +45,54 @@ class About extends React.Component{ // Create "Login with Google" and "Sign up 
     }
     componentDidMount(){
         this.loadFonts();
-    }
-    handleSignUp(){
-        firebase.auth().createUserWithEmailAndPassword(this.state.emailFormInput,this.state.passInput)
-        .then(userCredentials => {
-            const user = userCredentials.user
-            console.log(user)
+        console.log("MOUNT")
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if(user){
+                console.log("Should navigate to home")
+                this.AuthToHome()
+            }
         })
-        .catch(err =>{
-            alert(err)
-        })
+        return unsubscribe
     }
-    handleLogin(){
-        console.log("TODO: implement log in")
-        return(null)
+    handleSignUp = ()=>{
+        auth
+            .createUserWithEmailAndPassword(this.state.emailFormInput,this.state.passFormInput)
+            .then(userCredentials => {
+                const user = userCredentials.user
+                console.log("Registered:",user.email)
+            })
+            .catch(err =>{
+                alert(err)
+            })
+            const unsubscribe = auth.onAuthStateChanged(user => {
+                if(user){
+                    console.log("Should navigate to home")
+                    this.AuthToHome()
+                }
+            })
+            return unsubscribe
+    }
+    handleLogin = () => {
+        auth
+            .signInWithEmailAndPassword(this.state.emailFormInput,this.state.passFormInput)
+            .then(userCredentials =>{
+                const user = userCredentials.user
+                console.log("Signed in:",user.email)
+                this.setState({
+                    emailFormInput:"",
+                    passFormInput:"",
+                    keyTrigger:this.state.keyTrigger+1,
+                })
+                const unsubscribe = auth.onAuthStateChanged(user => {
+                    if(user){
+                        console.log("Should navigate to home")
+                        this.AuthToHome()
+                    }
+                })
+                return unsubscribe
+                
+            })
+
     }
     handleEmailChange = () =>{
         console.log(this.state.emailFormInput)
@@ -111,7 +156,7 @@ class About extends React.Component{ // Create "Login with Google" and "Sign up 
                     <SafeAreaView style={styles.parentView}>
                         <LogoWithText/>
 
-                        <View>{this.loginFields()}</View>
+                        <View key = {this.state.keyTrigger}>{this.loginFields()}</View>
                         <View>
                             <NavigationButton 
                             button = {styles.debugButton} 
@@ -121,8 +166,10 @@ class About extends React.Component{ // Create "Login with Google" and "Sign up 
                             />
                         </View>
                         
-                        <View>{this.signInButton(styles.loginButtonMode1, styles.loginText, "Sign In", ()=>console.log("lol"))}</View>
-
+                        <View>{this.signInButton(styles.loginButtonMode1, styles.loginText, "Sign In", ()=>this.handleLogin())}</View>
+                        <TouchableOpacity style={styles.backButtonBox} onPress={() => this.setState({screenMode:0})}>
+                            <BackButton styleText={styles.backButtonText}/>
+                        </TouchableOpacity>
                     </SafeAreaView>
                 )
                 }
@@ -149,7 +196,9 @@ class About extends React.Component{ // Create "Login with Google" and "Sign up 
                                 </View>
                                 
                                 <View>{this.signInButton(styles.signUpButtonMode2, styles.signUpText, "Register", ()=>this.handleSignUp())}</View>
-        
+                                <TouchableOpacity style={styles.backButtonBox} onPress={() => this.setState({screenMode:0})}>
+                                    <BackButton styleText={styles.backButtonText}/>
+                                </TouchableOpacity>
                             </SafeAreaView>
                         )
                         }
@@ -275,6 +324,25 @@ const styles = StyleSheet.create({
         textAlign:'center',
         lineHeight:vh/13,
     }, 
+    backButtonBox:{
+        position:'absolute',
+        paddingHorizontal:vw/30,
+        paddingVertical:vh/80,
+        top:vh/15,
+        left:vw/18, // -1.8, -2.3
+        borderRadius:32,
+        borderColor:'white',
+        borderWidth:1,
+    },
+    backButtonText:{
+        position:'absolute',
+        fontFamily:'Nunito-Medium',
+        color:'white',
+        textAlign:'center',
+        alignSelf:'center',
+        fontSize:vw/20,
+        lineHeight:vh/18,
+    },
     debugText:{
         color:"white",
         height:'100%',

@@ -7,7 +7,7 @@ export default class Home extends Component {
   render() {
     return (
       <SafeAreaView>
-        <View></View>
+        <Text>Welcome Home</Text>
       </SafeAreaView>
     )
   }
